@@ -3,8 +3,7 @@ import { SqliteConnectionOptions } from "typeorm/driver/sqlite/SqliteConnectionO
 
 const ConnectionConfig: SqliteConnectionOptions = {
   type: 'sqlite',
-  // @ts-ignore
-  database: join(global.appRoot + '/blog.sqlite'),
+  database: join(__dirname + '../../../../blog.sqlite'),
   key: 'd0c790ddff8a5ad3e10672177f8c1c74',
   synchronize: true,
   entities: [

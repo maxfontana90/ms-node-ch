@@ -1,15 +1,15 @@
-import { Module } from '@nestjs/common';
-import { ConnectionConfig } from './provider/connection-config';
-import { DatabaseConnection } from './provider/database';
+import { Global, Module } from '@nestjs/common';
+import { DatabaseService } from './service/database.service';
+import ConnectionConfig from './provider/config';
+import DatabaseConnection from './provider/connection';
 
+@Global()
 @Module({
   providers: [
-    {
-      provide: 'CONNECTION_CONFIG',
-      useValue: ConnectionConfig
-    },
+    ConnectionConfig,
     DatabaseConnection,
+    DatabaseService,
   ],
-  exports: [DatabaseConnection],
+  exports: [DatabaseService],
 })
 export class DataAccessModule {}

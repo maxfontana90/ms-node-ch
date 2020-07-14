@@ -1,7 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Res, UsePipes, ValidationPipe } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  Res,
+  UseGuards,
+  UsePipes,
+  ValidationPipe
+} from '@nestjs/common';
+import { Request, Response } from 'express';
 import slug from 'limax';
 import shortid from 'shortid';
+import { AuthorService } from 'src/modules/authors/service/author.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt';
+import { Author } from '../../authors/model/author.entity';
 
 import { CreatePostDto } from '../model/post.dto.create';
 import { Post as BlogPost } from '../model/post.entity';
@@ -12,6 +28,7 @@ export class PostsController {
 
   constructor(
     private postService: PostService,
+    private authorService: AuthorService,
   ) {
   }
 
@@ -22,7 +39,6 @@ export class PostsController {
       .status(200)
       .json(posts);
   }
-
 
   @Get(':slugId')
   async getOne(
@@ -37,7 +53,7 @@ export class PostsController {
           statusCode: 404,
           error: 'Not Found',
           message: `Post with slug id ${slugId} was not found`,
-        })
+        });
     }
 
     return response
@@ -45,14 +61,18 @@ export class PostsController {
       .json(post);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   async create(
+    @Req() request: Request,
     @Res() response: Response,
     @Body() post: CreatePostDto,
   ) {
-    const currentDateTime = new Date();
+    const user: Partial<Author> = request.user;
+    const author = await this.authorService.findByUsernameOrEmail(user.username);
 
+    const currentDateTime = new Date();
     const postMetadata: Partial<BlogPost> = {
       creationDate: currentDateTime,
       publicationDate: post.published ? currentDateTime : undefined,
@@ -63,18 +83,24 @@ export class PostsController {
       ...postMetadata,
       slug: slug(post.title),
       uid: shortid.generate(),
+      author,
     });
 
     return response.status(201).json(newPost);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':slugId')
   @UsePipes(new ValidationPipe({ transform: true, skipMissingProperties: true }))
   async update(
+    @Req() request: Request,
     @Res() response: Response,
     @Body() postUpdates: CreatePostDto,
     @Param('slugId') slugId,
   ) {
+    const user: Partial<Author> = request.user;
+    const author = await this.authorService.findByUsernameOrEmail(user.username);
+
     const post = await this.postService.find(slugId);
     if (!post) {
       return response
@@ -83,7 +109,17 @@ export class PostsController {
           statusCode: 404,
           error: 'Not Found',
           message: `Post with slug id ${slugId} does not exist`,
-        })
+        });
+    }
+
+    if (post.author.username !== author.username) {
+      return response
+        .status(403)
+        .json({
+          statusCode: 403,
+          error: 'Unauthorized',
+          messages: [`User didn't authored the post`],
+        });
     }
 
     const errorMessages: string[] = [];
@@ -102,7 +138,7 @@ export class PostsController {
 
     // The post's title can be updated only while it is a draft.
     // After its published can't be changed because the slug could be misleading. Also permalinks shouldn't be updated.
-    if(postUpdates.title && postUpdates.title !== post.title && post.published) {
+    if (postUpdates.title && postUpdates.title !== post.title && post.published) {
       errorMessages.push(`Can't update a post's title once its already published`);
     }
 
@@ -125,6 +161,7 @@ export class PostsController {
       .json(updatedPost);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':slugId')
   async delete(
     @Res() response: Response,
@@ -138,7 +175,7 @@ export class PostsController {
           statusCode: 404,
           error: 'Not Found',
           message: `Post with slug id ${slugId} does not exist`,
-        })
+        });
     }
 
     await this.postService.delete(post);

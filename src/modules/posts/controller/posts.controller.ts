@@ -25,7 +25,7 @@ export class PostsController {
 
 
   @Get(':slugId')
-  async findBySlugId(
+  async getOne(
     @Res() response: Response,
     @Param('slugId') slugId,
   ) {

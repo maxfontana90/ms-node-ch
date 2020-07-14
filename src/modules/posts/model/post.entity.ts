@@ -1,4 +1,5 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Author } from '../../authors/model/author.entity';
 import { Visibility } from '../types';
 
 @Entity({ name: 'post' })
@@ -26,6 +27,9 @@ export class Post {
 
   @Column()
   public visibility: Visibility;
+
+  @ManyToOne(type => Author, author => author.username)
+  public author: Author;
 
   @Column({ nullable: true, type: 'datetime' })
   public publicationDate: Date;

@@ -1,5 +1,7 @@
 import { Post } from 'src/modules/posts/model/post.entity';
-import { Column, Entity, Index, PrimaryGeneratedColumn, Unique, OneToMany } from 'typeorm';
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { AuthorDetailsDto } from './author-details.dto';
+import { AuthorSummaryDto } from './author-summary.dto';
 
 @Entity({ name: 'author' })
 @Unique(['username'])
@@ -30,4 +32,25 @@ export class Author {
 
   @Column({ type: 'datetime' })
   public joinDate: Date;
+
+  public transformWithDetails(): AuthorDetailsDto {
+    const authorDto = new AuthorDetailsDto();
+    authorDto.username = this.username;
+    authorDto.email = this.email;
+    authorDto.firstName = this.firstName;
+    authorDto.lastName = this.lastName;
+    authorDto.posts = this.posts.map(post => post.transformWithoutDetails());
+
+    return authorDto;
+  }
+
+  public transformWithoutDetails(): AuthorSummaryDto {
+    const authorDto = new AuthorSummaryDto();
+    authorDto.username = this.username;
+    authorDto.email = this.email;
+    authorDto.firstName = this.firstName;
+    authorDto.lastName = this.lastName;
+
+    return authorDto;
+  }
 }

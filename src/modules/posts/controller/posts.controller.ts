@@ -19,6 +19,8 @@ import shortid from 'shortid';
 import { AuthorService } from 'src/modules/authors/service/author.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt';
 import { Author } from '../../authors/model/author.entity';
+import { PostDetailsDto } from '../model/post-details.dto';
+import { PostSummaryDto } from '../model/post-summary.dto';
 
 import { PostSchema } from '../model/post.schema';
 import { Post as BlogPost } from '../model/post.entity';
@@ -39,13 +41,14 @@ export class PostsController {
     status: HttpStatus.OK,
     isArray: true,
     description: 'On success, the HTTP status code in the response header is 200',
+    type: PostSummaryDto
   })
   @Get()
   async list(@Res() response: Response) {
     const posts = await this.postService.list();
     response
       .status(200)
-      .json(posts);
+      .json(posts.map(post => post.transformWithoutDetails()));
   }
 
   @ApiParam({ name: 'slugId', type: 'string' })
@@ -54,6 +57,7 @@ export class PostsController {
     status: HttpStatus.OK,
     isArray: false,
     description: 'On success, the HTTP status code in the response header is 200',
+    type: PostDetailsDto,
   })
   @Get(':slugId')
   async getOne(
@@ -73,7 +77,7 @@ export class PostsController {
 
     return response
       .status(200)
-      .json(post);
+      .json(post.transformWithDetails());
   }
 
   @ApiBearerAuth()
@@ -83,6 +87,7 @@ export class PostsController {
     status: HttpStatus.CREATED,
     isArray: false,
     description: 'On success, the HTTP status code in the response header is 201',
+    type: PostDetailsDto,
   })
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -109,7 +114,7 @@ export class PostsController {
       author,
     });
 
-    return response.status(201).json(newPost);
+    return response.status(201).json(newPost.transformWithDetails());
   }
 
   @ApiBearerAuth()
@@ -119,6 +124,7 @@ export class PostsController {
     status: HttpStatus.OK,
     isArray: false,
     description: 'On success, the HTTP status code in the response header is 200',
+    type: PostDetailsDto,
   })
   @UseGuards(JwtAuthGuard)
   @Put(':slugId')
@@ -189,7 +195,7 @@ export class PostsController {
 
     return response
       .status(200)
-      .json(updatedPost);
+      .json(updatedPost.transformWithDetails());
   }
 
   @ApiBearerAuth()

@@ -2,6 +2,8 @@ import { Controller, Get, HttpStatus, Param, Req, Res } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 import { Request, Response } from 'express';
+import { PostDetailsDto } from '../../posts/model/post-details.dto';
+import { AuthorDetailsDto } from '../model/author-details.dto';
 import { AuthorService } from '../service/author.service';
 
 @Controller('authors')
@@ -18,6 +20,7 @@ export class AuthorsController {
     status: HttpStatus.OK,
     isArray: false,
     description: 'On success, the HTTP status code in the response header is 200',
+    type: AuthorDetailsDto,
   })
   @Get(':username')
   async getOne(
@@ -25,15 +28,15 @@ export class AuthorsController {
     @Res() response: Response,
     @Param('username') username,
   ) {
-    const authorPosts = await this
+    const author = await this
       .authorService
       // TODO Unfortunately passport-jwt doesn't support exceptions and work conditionally
       // TODO An alternative solution would be implementing a separate route to list a user's own drafts/private posts.
       // TODO Another alternative is create a custom middleware to handle this case, based on the page/scope.
       // This happens because req.user is set only when the guard is active on a given endpoint.
-      .getPostsFromAuthor(username);
+      .getAuthorWithPosts(username);
 
-    if (!authorPosts) {
+    if (!author) {
       return response
         .status(404)
         .json({
@@ -43,6 +46,6 @@ export class AuthorsController {
         });
     }
 
-    return response.status(200).json(authorPosts);
+    return response.status(200).json(author.transformWithDetails());
   }
 }

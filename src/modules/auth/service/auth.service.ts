@@ -23,7 +23,7 @@ export class AuthService {
     return validUser ? author : undefined;
   }
 
-  async signJwt(author: Author) {
+  async signJwt(author: Author): Promise<string> {
     const {
       username,
       email,

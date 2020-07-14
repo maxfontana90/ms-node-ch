@@ -10,7 +10,8 @@ import {
   Res,
   UseGuards,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  HttpStatus
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import slug from 'limax';
@@ -19,9 +20,10 @@ import { AuthorService } from 'src/modules/authors/service/author.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt';
 import { Author } from '../../authors/model/author.entity';
 
-import { CreatePostDto } from '../model/post.dto.create';
+import { PostSchema } from '../model/post.schema';
 import { Post as BlogPost } from '../model/post.entity';
 import { PostService } from '../service/post.service';
+import { ApiBearerAuth, ApiResponse, ApiOperation, ApiParam, ApiHeader } from '@nestjs/swagger';
 
 @Controller('posts')
 export class PostsController {
@@ -32,6 +34,12 @@ export class PostsController {
   ) {
   }
 
+  @ApiOperation({ summary: 'List all posts' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    isArray: true,
+    description: 'On success, the HTTP status code in the response header is 200',
+  })
   @Get()
   async list(@Res() response: Response) {
     const posts = await this.postService.list();
@@ -40,6 +48,13 @@ export class PostsController {
       .json(posts);
   }
 
+  @ApiParam({ name: 'slugId', type: 'string' })
+  @ApiOperation({ summary: 'Retrieve a post' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 200',
+  })
   @Get(':slugId')
   async getOne(
     @Res() response: Response,
@@ -61,13 +76,21 @@ export class PostsController {
       .json(post);
   }
 
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'Authorization', required: true, description: 'A valid access token' })
+  @ApiOperation({ summary: 'Create a post' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 201',
+  })
   @UseGuards(JwtAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   async create(
     @Req() request: Request,
     @Res() response: Response,
-    @Body() post: CreatePostDto,
+    @Body() post: PostSchema,
   ) {
     const user: Partial<Author> = request.user;
     const author = await this.authorService.findByUsernameOrEmail(user.username);
@@ -89,13 +112,21 @@ export class PostsController {
     return response.status(201).json(newPost);
   }
 
+  @ApiBearerAuth()
+  @ApiParam({ name: 'slugId', type: 'string' })
+  @ApiOperation({ summary: 'Update a post' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 200',
+  })
   @UseGuards(JwtAuthGuard)
   @Put(':slugId')
   @UsePipes(new ValidationPipe({ transform: true, skipMissingProperties: true }))
   async update(
     @Req() request: Request,
     @Res() response: Response,
-    @Body() postUpdates: CreatePostDto,
+    @Body() postUpdates: PostSchema,
     @Param('slugId') slugId,
   ) {
     const user: Partial<Author> = request.user;
@@ -161,6 +192,15 @@ export class PostsController {
       .json(updatedPost);
   }
 
+  @ApiBearerAuth()
+  @ApiParam({ name: 'slugId', type: 'string' })
+  @ApiOperation({ summary: 'Delete a post' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 204',
+  })
+  @ApiOperation({ summary: 'Delete a post' })
   @UseGuards(JwtAuthGuard)
   @Delete(':slugId')
   async delete(

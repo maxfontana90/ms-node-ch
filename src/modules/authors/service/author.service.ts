@@ -31,7 +31,7 @@ export class AuthorService {
       .getOne();
   }
 
-  async getPostsFromAuthor(username: string, includeHiddenContent: boolean = false) {
+  async getPostsFromAuthor(username: string, includeHiddenContent: boolean = false): Promise<Author> {
     const queryBuilder = this
       .authorRepository
       .createQueryBuilder('author');

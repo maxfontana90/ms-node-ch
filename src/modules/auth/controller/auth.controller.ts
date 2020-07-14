@@ -1,10 +1,11 @@
-import { Body, Controller, Post, Res, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import bcrypt from 'bcrypt';
 
-import { CreateAuthorDto } from '../../authors/model/author.dto.create';
+import { AuthorSchema } from '../../authors/model/author.schema';
 import { AuthorService } from '../../authors/service/author.service';
-import { CredentialsDto } from '../model/credentials.dto';
+import { CredentialsSchema } from '../model/credentials.schema';
 import { AuthService } from '../service/auth.service';
 
 @Controller('auth')
@@ -15,11 +16,17 @@ export class AuthController {
   ) {
   }
 
+  @ApiOperation({ summary: 'Login as an author' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 200',
+  })
   @Post('login')
   @UsePipes(new ValidationPipe({ transform: true }))
   async login(
     @Res() response: Response,
-    @Body() credentials: CredentialsDto,
+    @Body() credentials: CredentialsSchema,
   ) {
     const author = await this.authService.validateUser(credentials.username, credentials.password);
     if (!author) {
@@ -36,11 +43,17 @@ export class AuthController {
     response.status(200).json({ accessToken });
   }
 
+  @ApiOperation({ summary: 'Create an author account' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    isArray: false,
+    description: 'On success, the HTTP status code in the response header is 200',
+  })
   @Post('sign-up')
   @UsePipes(new ValidationPipe({ transform: true }))
   async signUp(
     @Res() response: Response,
-    @Body() authorDto: CreateAuthorDto,
+    @Body() authorDto: AuthorSchema,
   ) {
     let errorMessages: string[] = [];
     const usernameInUse = await this.authorService.findByUsernameOrEmail(authorDto.username);
@@ -71,6 +84,6 @@ export class AuthController {
       passwordHash,
       joinDate: new Date(),
     });
-    response.status(200).json(newAuthor);
+    response.status(201).json(newAuthor);
   }
 }

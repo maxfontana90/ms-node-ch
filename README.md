@@ -62,6 +62,49 @@ For other storage mechanisms, create a new provider that handles connections to 
 
 We are using [@nestjs/swagger](https://github.com/nestjs/swagger) to document the API.
 
-### How to
+### Launching docs
 1. Add swagger annotations to your controllers, schemas & DTOs.
 2. Open http://localhost:3000/api-docs in your browser of preference and voilà. 
+
+### Getting started
+1. Create a user by posting to `/auth/sign-up`
+    ```bash
+    curl --location --request POST 'http://localhost:3000/auth/sign-up' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "username": "foobar",
+        "email": "user@example.net",
+        "password": "_passWORD123",
+        "firstName": "Foo",
+        "lastName": "Bar"
+    }'
+    ```
+2. Get the access token by posting to `/auth/login`
+    ```bash
+    curl --location --request POST 'http://localhost:3000/auth/login' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "username": "foobar",
+        "password": "_passWORD123"
+    }'
+    ```
+3. Create a blog post by posting to `/posts`
+    ```bash
+   curl --location --request POST 'http://localhost:3000/posts' \
+   --header 'Content-Type: application/json' \
+   --header 'Authorization: Bearer XXXXXXX' \
+   --data-raw '{
+       "title": "Mi First Post!!! 😋",
+       "published": true,
+       "body": "TBD",
+       "visibility": "public"
+   }'
+    ```
+4. Fetch the list of published posts
+    ```bash
+    curl  --request GET 'http://localhost:3000/posts'
+    ```
+5. Fetch your post's details based on its `slugid`
+    ```bash
+    curl  --request GET 'http://localhost:3000/posts/:slugid'    
+    ```

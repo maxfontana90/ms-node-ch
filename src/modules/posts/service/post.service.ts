@@ -40,9 +40,9 @@ export class PostService {
     return post;
   }
 
-  async update(slugId: string, postUpdates: DeepPartial<Post>) {
+  async update(slugId: string, postUpdates: DeepPartial<Post>): Promise<Post|undefined> {
     const [slug, uid] = slugId.split('_');
-    const post = await this
+    const post: Post = await this
       .postsRepository
       .findOneOrFail({
         where: {
@@ -51,12 +51,14 @@ export class PostService {
         }
       });
 
+    console.log(post);
     const updatedPost = {
       ...post,
       ...postUpdates,
     };
 
-    return await this.postsRepository.save(updatedPost);
+    const savedPost = await this.postsRepository.save(updatedPost);
+    return this.postsRepository.create(savedPost);
   }
 
   async create(postData: DeepPartial<Post>): Promise<Post> {
